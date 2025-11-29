@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
 
-TOKEN = "8245533941:AAGZR2MPSn38ehCBlvO6VUmWDizmIbIKYAk"
+TOKEN = "8372469935:AAGE94rMpbpOXSJT-nBG9s1rdU91gEZclus"
 PORT = int(os.environ.get("PORT", 8443))
 WEBHOOK_URL = f"https://uptv-bot-1.onrender.com/{TOKEN}"
 
