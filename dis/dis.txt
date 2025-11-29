@@ -1,0 +1,136 @@
+import os
+from telegram import Update
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from utils import get_top_movies
+توضیح خط‌به‌خط:
+
+import os → برای خواندن متغیرهای محیطی مثل پورت از سرور.
+
+from telegram import Update → برای دسترسی به اطلاعات پیام‌هایی که کاربر می‌فرسته.
+
+from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes → ابزارهای اصلی برای ساخت ربات:
+
+ApplicationBuilder: برای ساخت اپلیکیشن ربات
+
+CommandHandler: برای مدیریت دستورات مثل /start
+
+ContextTypes: اطلاعات و context هر دستور
+
+from utils import get_top_movies → تابعی که ۲۰ فیلم اول سایت Uptvs را می‌گیره (از فایل utils.py).
+============================================================================================================
+2️⃣ توکن و Webhook
+python
+Copy code
+TOKEN = "8245533941:AAGZR2MPSn38ehCBlvO6VUmWDizmIbIKYAk"
+PORT = int(os.environ.get("PORT", 8443))
+WEBHOOK_URL = f"https://uptv-bot-1.onrender.com/{TOKEN}"
+توضیح:
+
+TOKEN → توکن ربات تلگرام که BotFather بهت داده.
+
+PORT → پورت سرور که Render بهش اختصاص میده، اگر نداشت ۸۴۴۳ پیش‌فرض.
+
+WEBHOOK_URL → آدرس Webhook روی اینترنت که تلگرام پیام‌ها رو بهش میفرسته.
+
+Webhook یعنی تلگرام هر پیام کاربر رو مستقیم به این آدرس میفرسته و ربات پاسخ میده.
+==================================================================================================================
+3️⃣ دستورات ربات
+دستور /start
+python
+Copy code
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("سلام! ربات شما آماده است 🚀")
+توضیح:
+
+تابع async → چون تلگرام به صورت غیرهمزمان (asynchronous) کار میکنه.
+
+update → اطلاعات پیام کاربر
+
+context → اطلاعات و ابزارهای کمکی ربات
+
+reply_text → پاسخ متنی به کاربر
+
+دستور /help
+python
+Copy code
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(
+        "دستورات موجود:\n"
+        "/start - شروع ربات\n"
+        "/help - نمایش دستورات\n"
+        "/movies - نمایش 20 فیلم اول سایت Uptvs"
+    )
+توضیح دستورها به کاربر
+
+/movies هم اینجا معرفی شده چون دستور اصلی نمایش فیلم‌هاست.
+
+دستور /movies
+python
+Copy code
+async def movies_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("در حال بارگذاری فیلم‌ها... 🎬")
+    movies = get_top_movies()
+    if not movies:
+        await update.message.reply_text("خطا در دریافت فیلم‌ها. لطفاً بعداً تلاش کنید.")
+        return
+
+    for m in movies:
+        text = f"🎥 {m['title']}\n🔗 {m['link']}"
+        if m['image']:
+            await update.message.reply_photo(photo=m['image'], caption=text)
+        else:
+            await update.message.reply_text(text)
+خط به خط:
+
+پیام به کاربر که فیلم‌ها در حال بارگذاری هستند.
+
+صدا زدن تابع get_top_movies() که اطلاعات فیلم‌ها رو میاره.
+
+اگر لیست خالی بود، پیام خطا ارسال می‌کنه.
+
+برای هر فیلم:
+
+متن با عنوان و لینک ساخته میشه
+
+اگر عکس داشت، با reply_photo میفرسته
+
+اگر عکس نداشت، فقط متن میفرسته
+
+این بخش دقیقا کاری که میخوای: نمایش فیلم‌ها از سایت Uptvs با عکس و لینک.
+===============================================================================================
+4️⃣ راه‌اندازی ربات و Webhook
+python
+Copy code
+if __name__ == "__main__":
+    app = ApplicationBuilder().token(TOKEN).build()
+
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("help", help_command))
+    app.add_handler(CommandHandler("movies", movies_command))
+
+    # Start webhook
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url=WEBHOOK_URL
+    )
+توضیح خط به خط:
+
+if __name__ == "__main__": → فقط وقتی مستقیم اجرا می‌کنیم، ربات شروع میشه.
+
+ApplicationBuilder().token(TOKEN).build() → ساخت اپلیکیشن ربات با توکن ما
+
+add_handler → هر دستور /start، /help و /movies رو به ربات معرفی می‌کنیم
+
+run_webhook(...) → راه‌اندازی Webhook:
+
+listen="0.0.0.0" → ربات به همه آدرس‌ها گوش میده
+
+port=PORT → پورت سرور
+
+url_path=TOKEN → مسیر URL برای امنیت (توکن)
+
+webhook_url=WEBHOOK_URL → URL اصلی که تلگرام پیام‌ها رو میفرسته
+
+بعد از این، ربات آماده است و هر پیام کاربر به /movies یا /start پاسخ میده.
